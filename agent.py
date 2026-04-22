@@ -45,6 +45,99 @@ SCREEN_LOOP = "500x500x24"
 CURRENT_SLOT = None 
 
 # ==========================================
+# 📊 DASHBOARD MONITORING INTEGRATION
+# ==========================================
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:5000")
+DASHBOARD_AUTH_KEY = os.getenv("DASHBOARD_AUTH_KEY", "GHOST_SECRET_2026")
+
+def register_to_dashboard():
+    """Register panel ke dashboard monitoring saat startup"""
+    global CURRENT_SLOT
+    try:
+        # Get IP panel
+        try:
+            my_ip = requests.get('https://api.ipify.org', timeout=10, verify=False).text.strip()
+        except:
+            my_ip = "127.0.0.1"
+        
+        # Get URL panel
+        hf_host = os.environ.get("SPACE_HOST")
+        if hf_host:
+            bot_url = f"https://{hf_host}"
+        else:
+            bot_url = "http://localhost"
+        
+        payload = {
+            "slot": CURRENT_SLOT if CURRENT_SLOT else 1,
+            "ip": my_ip,
+            "url": bot_url,
+            "port": 7860
+        }
+        
+        resp = requests.post(
+            f"{DASHBOARD_URL}/api/register",
+            json=payload,
+            headers={"X-Auth-Key": DASHBOARD_AUTH_KEY},
+            timeout=10,
+            verify=False
+        )
+        
+        if resp.status_code == 200:
+            print(f"✅ [DASHBOARD] Registered successfully", flush=True)
+        else:
+            print(f"⚠️ [DASHBOARD] Registration failed: {resp.status_code}", flush=True)
+    except Exception as e:
+        print(f"⚠️ [DASHBOARD] Failed to register: {e}", flush=True)
+
+def send_heartbeat_to_dashboard():
+    """Send heartbeat ke dashboard setiap 30 detik"""
+    while True:
+        try:
+            if not CURRENT_SLOT:
+                time.sleep(30)
+                continue
+            
+            # Count emails dan links
+            emails_count = 0
+            links_count = 0
+            
+            if os.path.exists('email.txt'):
+                with open('email.txt', 'r') as f:
+                    emails_count = len([line for line in f if line.strip()])
+            
+            if os.path.exists('link.txt'):
+                with open('link.txt', 'r') as f:
+                    links_count = len([line for line in f if line.strip()])
+            
+            # Determine current state
+            state = "IDLE"
+            if check_process(FILE_LOGIN):
+                state = "BUSY_LOGIN"
+            elif check_process(FILE_LOOP):
+                state = "BUSY_LOOP"
+            
+            payload = {
+                "slot": CURRENT_SLOT,
+                "state": state,
+                "data": {
+                    "emails": emails_count,
+                    "links": links_count
+                }
+            }
+            
+            requests.post(
+                f"{DASHBOARD_URL}/api/heartbeat",
+                json=payload,
+                headers={"X-Auth-Key": DASHBOARD_AUTH_KEY},
+                timeout=10,
+                verify=False
+            )
+        except:
+            pass  # Silent error
+        
+        time.sleep(30)
+
+# ==========================================
 # 🌉 NETWORK BRIDGE & DNS BYPASS
 # ==========================================
 old_getaddrinfo = socket.getaddrinfo
@@ -457,5 +550,14 @@ def view_screenshot():
         return jsonify({"error": f"File {filename} not found"}), 404
         
 if __name__ == '__main__':
+    # Register ke dashboard
+    register_to_dashboard()
+    
+    # Start heartbeat thread
+    threading.Thread(target=send_heartbeat_to_dashboard, daemon=True).start()
+    
+    # Start automatic flow
     threading.Thread(target=start_automatic_flow, daemon=True).start()
+    
+    # Run Flask API
     app.run(host='0.0.0.0', port=7860)

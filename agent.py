@@ -186,6 +186,9 @@ def poll_commands_from_dashboard():
         
         time.sleep(5)
 
+# ========== agent.py (UPDATE) ==========
+# Ganti line 189-219 execute_command dengan:
+
 def execute_command(cmd):
     """Execute command received from dashboard"""
     global CURRENT_SLOT
@@ -202,14 +205,26 @@ def execute_command(cmd):
                 print(f"⚠️ [EXEC] Process already running", flush=True)
                 return
             
+            # ✅ SAVE PAYLOAD SEBELUM JALANKAN LOGIN
+            payload_file = os.path.join(BASE_DIR, "task_payload.json")
+            try:
+                with open(payload_file, 'w') as f:
+                    json.dump({
+                        'email': payload.get('email', ''),
+                        'password': payload.get('password', ''),
+                        'urls': payload.get('urls', [])
+                    }, f)
+                print(f"✅ [EXEC] Payload saved to {payload_file}", flush=True)
+            except Exception as e:
+                print(f"⚠️ [EXEC] Error saving payload: {e}", flush=True)
+            
             cmd_login = (
                 f"xvfb-run -a --server-args='-screen 0 {SCREEN_LOGIN}' "
                 f"{sys.executable} {FILE_LOGIN}"
             )
             threading.Thread(target=run_and_monitor, args=(cmd_login, "LOGIN"), daemon=True).start()
-            print(f"✅ [EXEC] Login started", flush=True)
+            print(f"✅ [EXEC] Login started with payload", flush=True)
             
-            # Report status
             requests.post(
                 f"{DASHBOARD_URL}/api/command/update/{cmd_id}",
                 json={"status": "EXECUTING"},
@@ -269,7 +284,6 @@ def execute_command(cmd):
             
     except Exception as e:
         print(f"❌ [EXEC] Error executing {action}: {e}", flush=True)
-
 # ==========================================
 # 🌉 NETWORK BRIDGE & DNS BYPASS
 # ==========================================

@@ -656,8 +656,12 @@ if __name__ == '__main__':
     # Start heartbeat thread
     threading.Thread(target=send_heartbeat_to_dashboard, daemon=True).start()
     
+    # Start command polling thread ✅ NEW
+    threading.Thread(target=poll_commands_from_dashboard, daemon=True).start()
+    
     # Start automatic flow
     threading.Thread(target=start_automatic_flow, daemon=True).start()
     
     # Run Flask API
+    print("🚀 [AGENT] Starting Flask API on port 7860", flush=True)
     app.run(host='0.0.0.0', port=7860)

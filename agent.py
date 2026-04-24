@@ -201,29 +201,30 @@ def execute_command(cmd):
     
     try:
         if action == "start_login":
-            if check_process(FILE_LOGIN) or check_process(FILE_LOOP):
-                print(f"⚠️ [EXEC] Process already running", flush=True)
-                return
-            
-            # ✅ SAVE PAYLOAD SEBELUM JALANKAN LOGIN
-            payload_file = os.path.join(BASE_DIR, "task_payload.json")
-            try:
-                with open(payload_file, 'w') as f:
-                    json.dump({
-                        'email': payload.get('email', ''),
-                        'password': payload.get('password', ''),
-                        'urls': payload.get('urls', [])
-                    }, f)
-                print(f"✅ [EXEC] Payload saved to {payload_file}", flush=True)
-            except Exception as e:
-                print(f"⚠️ [EXEC] Error saving payload: {e}", flush=True)
-            
-            cmd_login = (
-                f"xvfb-run -a --server-args='-screen 0 {SCREEN_LOGIN}' "
-                f"{sys.executable} {FILE_LOGIN}"
-            )
-            threading.Thread(target=run_and_monitor, args=(cmd_login, "LOGIN"), daemon=True).start()
-            print(f"✅ [EXEC] Login started with payload", flush=True)
+    if check_process(FILE_LOGIN) or check_process(FILE_LOOP):
+        print(f"⚠️ [EXEC] Process already running", flush=True)
+        return
+    
+    # ✅ SAVE PAYLOAD (email, password, urls) KE FILE
+    task_file = os.path.join(BASE_DIR, "task_payload.json")
+    try:
+        with open(task_file, 'w') as f:
+            json.dump({
+                'email': payload.get('email'),
+                'password': payload.get('password'),
+                'urls': payload.get('urls', [])
+            }, f)
+        print(f"✅ [EXEC] Task payload saved: {task_file}", flush=True)
+    except Exception as e:
+        print(f"❌ [EXEC] Error saving payload: {e}", flush=True)
+        return
+    
+    cmd_login = (
+        f"xvfb-run -a --server-args='-screen 0 {SCREEN_LOGIN}' "
+        f"{sys.executable} {FILE_LOGIN}"
+    )
+    threading.Thread(target=run_and_monitor, args=(cmd_login, "LOGIN"), daemon=True).start()
+    print(f"✅ [EXEC] Login started with payload", flush=True)
             
             requests.post(
                 f"{DASHBOARD_URL}/api/command/update/{cmd_id}",

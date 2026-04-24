@@ -169,8 +169,8 @@ def poll_commands_from_dashboard():
                 continue
             
             # Build full URL dengan environment variable
-            dashboard_url = os.getenv("DASHBOARD_URL", "https://dashboard.jujulefek.qzz.io")
-            url = f"{dashboard_url}/api/command/get/{CURRENT_SLOT}"
+            # dashboard_url = os.getenv("DASHBOARD_URL", "https://dashboard.jujulefek.qzz.io")
+            url = f"{DASHBOARD_URL}/api/command/get/{CURRENT_SLOT}"
             
             response = requests.get(
                 url,

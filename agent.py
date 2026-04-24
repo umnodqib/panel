@@ -47,7 +47,7 @@ CURRENT_SLOT = None
 # ==========================================
 # 📊 DASHBOARD MONITORING INTEGRATION
 # ==========================================
-DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:5000")
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", "https://dashboard.jujulefek.qzz.io")
 DASHBOARD_AUTH_KEY = os.getenv("DASHBOARD_AUTH_KEY", "GHOST_SECRET_2026")
 
 def register_to_dashboard():

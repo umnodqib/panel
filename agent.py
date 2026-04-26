@@ -694,6 +694,27 @@ def view_screenshot():
             return jsonify({"error": str(e)}), 500
     else:
         return jsonify({"error": f"File {filename} not found"}), 404
+
+# ==========================================
+# 📋 LOG VIEWER ENDPOINT
+# ==========================================
+@app.route('/logs', methods=['GET'])
+def get_logs():
+    """Return bot logs untuk dashboard lihat"""
+    try:
+        if not os.path.exists(LOG_FILE):
+            return jsonify({"logs": "No logs yet"}), 200
+        
+        # Read last 100 lines
+        with open(LOG_FILE, 'r') as f:
+            lines = f.readlines()
+            last_lines = lines[-100:] if len(lines) > 100 else lines
+            logs_text = ''.join(last_lines)
+        
+        print(f"📋 [LOG] Serving {len(last_lines)} lines", flush=True)
+        return jsonify({"logs": logs_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
         
 if __name__ == '__main__':
     # Register ke dashboard

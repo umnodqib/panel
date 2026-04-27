@@ -1,25 +1,25 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
+
+# Install Chrome + dependencies
+RUN apt-get update && apt-get install -y \
+    google-chrome-stable \
+    xvfb \
+    pyautogui \
+    python3-mss \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    wget \
-    xvfb \
-    chromium \
-    chromium-driver \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy aplikasi
-COPY . .
+COPY agent.py .
+COPY login.py .
+COPY login_loop.py .
 
-# Create directories
-RUN mkdir -p chrome_profiles data
+# Create directories for persistence
+RUN mkdir -p /app/chrome_profiles /app/fresh_data /tmp
 
 EXPOSE 7860
 
